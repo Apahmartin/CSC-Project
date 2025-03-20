@@ -12,5 +12,9 @@
 5. Write additional notes to your client such as how to pay, bank details and so on and so forth.
 6. Preview your invoice.
 7. Print your invoice.
+
+To start the project run the following commands
+-> cd invoicer_v2-main
+-> npm start
  
 ### Built by [Martinez]

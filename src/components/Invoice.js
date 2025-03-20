@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useRef } from "react";
 import ClientDetails from "./ClientDetails";
 import Dates from "./Dates";
 import Footer from "./Footer";
@@ -9,6 +9,10 @@ import Table from "./Table";
 import TableForm from "./TableForm";
 import ReactToPrint from "react-to-print";
 import { State } from "../context/stateContext";
+import React from "react";
+
+
+
 
 function Invoice() {
   const {
@@ -39,7 +43,27 @@ function Invoice() {
     notes,
     setNotes,
     componentRef,
+    submitInvoice,
   } = useContext(State);
+
+  
+  const invoiceNumberInputRef = useRef(null); // Create a ref for the input
+
+
+  const handleInvoiceNumberFocus = () => {
+    if (!invoiceNumber) {
+        setInvoiceNumber(generateInvoiceId());
+    }
+  };
+
+  function generateInvoiceId() {
+      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-+#!@$%^&*';
+      let invoiceId = '';
+      for (let i = 0; i < 16; i++) {
+          invoiceId += characters.charAt(Math.floor(Math.random() * characters.length));
+      }
+      return invoiceId;
+  }
 
   return (
     <>
@@ -201,6 +225,8 @@ function Invoice() {
                     placeholder="Invoice Number"
                     autoComplete="off"
                     value={invoiceNumber}
+                    onFocus={handleInvoiceNumberFocus} // Add onFocus event
+                    ref={invoiceNumberInputRef}
                     onChange={(e) => setInvoiceNumber(e.target.value)}
                   />
                 </div>
@@ -249,6 +275,9 @@ function Invoice() {
                 onChange={(e) => setNotes(e.target.value)}
               ></textarea>
             </div>
+            <button className="bg-blue-500 ml-5 text-white font-bold py-2 px-8 rounded hover:bg-blue-600 hover:text-white transition-all duration-150 hover:ring-4 hover:ring-blue-400"
+              onClick={submitInvoice}
+              > Submit </button>
           </div>
         </section>
 

@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { createContext, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
@@ -26,10 +27,11 @@ export default function StateContext({ children }) {
   const [list, setList] = useState([]);
   const [total, setTotal] = useState(0);
   const [width] = useState(641);
-  // const [invoices, setInvoices] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [editingItemId, setEditingItemId] = useState(null);
+
 
   const componentRef = useRef();
 
@@ -55,7 +57,7 @@ export default function StateContext({ children }) {
         description,
         quantity,
         price,
-        amount,
+        amount : quantity * price,
       };
       setDescription("");
       setQuantity("");
@@ -67,6 +69,54 @@ export default function StateContext({ children }) {
     }
   };
 
+
+  const calculateTotal = () => {
+    const allItems = list.map((item) => item.price * item.quantity);
+    setTotal(collect(allItems).sum());
+  };
+
+  useEffect(() => {
+    calculateTotal();
+  }, [list]);
+
+  const editRow = (id) => {
+    const editingRow = list.find((row) => row.id === id);
+    setList(list.filter((row) => row.id !== id));
+    setIsEditing(true);
+    setDescription(editingRow.description);
+    setQuantity(editingRow.quantity);
+    setPrice(editingRow.price);
+    setAmount(editingRow.amount);
+  
+    // Store the ID of the row being edited
+    setEditingItemId(id);
+  };
+  
+  // Function to update the item when "Finish Editing" is clicked
+  const updateItem = async () => {
+    if (!isEditing) return; // Only update when editing is finished
+  
+    // Prepare updated item data
+    const updatedItem = {
+      description,
+      quantity,
+      price,
+      amount,
+    };
+  
+    try {
+      const response = await axios.put(`http://localhost:3000/invoices/${invoiceNumber}/items/${editingItemId}`, updatedItem);
+      console.log("Invoice item updated successfully:", response.data);
+      toast.success("Invoice item updated successfully!");
+    } catch (error) {
+      console.error("Error updating invoice item:", error);
+      toast.error("Failed to update invoice item");
+    } finally {
+      setIsEditing(false); // Reset editing state after update
+      setEditingItemId(null); // Clear editing item ID
+    }
+  };
+  
   // Calculate items amount function
   useEffect(() => {
     const calculateAmount = (amount) => {
@@ -76,32 +126,54 @@ export default function StateContext({ children }) {
     calculateAmount(amount);
   }, [amount, price, quantity, setAmount]);
 
-  // Use collect.js to calculate the total amount of items in the table. This is a much better function than the commented one above.
-  const calculateTotal = () => {
-    const allItems = list.map((item) => item.price);
 
-    setTotal(collect(allItems).sum());
-  };
-
-  useEffect(() => {
-    calculateTotal();
-  });
-
-  // Edit function
-  const editRow = (id) => {
-    const editingRow = list.find((row) => row.id === id);
-    setList(list.filter((row) => row.id !== id));
-    setIsEditing(true);
-    setDescription(editingRow.description);
-    setQuantity(editingRow.quantity);
-    setPrice(editingRow.price);
-  };
-
-  // Delete function
   const deleteRow = (id) => {
     setList(list.filter((row) => row.id !== id));
-    // CalcSum();
     setShowModal(false);
+  };
+
+
+
+  const submitInvoice = async () => {
+    const invoiceData = {
+      vendor: {
+        name,
+        address,
+        email,
+        phone,
+        website,
+      },
+      client: {
+        name: clientName,
+        address: clientAddress,
+      },
+      payment: {
+        name: bankName,
+        account_number: bankAccount,
+        type: "MOMO",
+      },
+      invoice: {
+        number: invoiceNumber,
+        date: invoiceDate,
+        due_date: dueDate,
+        notes: notes,
+      },
+      items: list.map(item => ({
+        description: item.description,
+        quantity: item.quantity,
+        price: item.price,
+        amount: item.amount
+      }))
+    };
+
+    try {
+      const response = await axios.post("http://localhost:3000/invoices", invoiceData);
+      console.log("Invoice submitted successfully:", response.data);
+      toast.success("Invoice submitted successfully!");
+    } catch (error) {
+      console.error("Error submitting invoice:", error);
+      toast.error("Failed to submit invoice");
+    }
   };
 
   const context = {
@@ -150,11 +222,13 @@ export default function StateContext({ children }) {
     setIsEditing,
     showModal,
     setShowModal,
-    handleSubmit,
     editRow,
     deleteRow,
     showLogoutModal,
     setShowLogoutModal,
+    submitInvoice,
+    handleSubmit,
+    updateItem,
   };
 
   return <State.Provider value={context}>{children}</State.Provider>;

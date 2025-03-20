@@ -20,6 +20,7 @@ export default function TableForm() {
     showModal,
     setShowModal,
     handleSubmit,
+    updateItem,
     editRow,
   } = useContext(State);
 
@@ -74,8 +75,9 @@ export default function TableForm() {
           </div>
         </div>
         <button
-          type="submit"
+          type="button"
           className="bg-blue-500 mb-5 text-white font-bold py-2 px-8 rounded hover:bg-blue-600 hover:text-white transition-all duration-150 hover:ring-4 hover:ring-blue-400"
+          onClick={isEditing ? updateItem : handleSubmit}
         >
           {isEditing ? "Finish Editing" : "Add Table Item"}
         </button>
